@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-#
-#   y = x1*a1 + x2*a2 + x3*a3 +...+ xn*an
-#   Ax = b
-#
+
 from numpy import *
 import numpy as np
 import sys

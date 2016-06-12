@@ -18,7 +18,7 @@ fp = open(hostfile)
 
 for ip in fp.readlines():
 	ip = ip.strip().split()
-	if ip != "10.10.10.63":
+	if ip[1] != "10.10.10.63":
 		cmd_cp = "scp "+join(app_dir,"script/")+"run_local.py " + "ubuntu@%s:"%(ip[1])
 		cmd_cp += join(app_dir,"script/")
 	
