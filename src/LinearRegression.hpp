@@ -3,7 +3,7 @@
 #include <atomic>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <petuum_ps_common/include/petuum_ps.hpp>
-#include "matrix_loader.hpp"
+
 #include "util/Eigen/Dense"
 
 namespace LR {
