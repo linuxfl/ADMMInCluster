@@ -11,7 +11,7 @@ proj_dir = dirname(dirname(app_dir))
 hostfile = join(proj_dir, hostfile_name)
 
 #kill program
-killcmd = "./kill.py "+hostfile
+killcmd = app_dir+"/script/kill.py "+hostfile
 os.system(killcmd)
 
 fp = open(hostfile)
