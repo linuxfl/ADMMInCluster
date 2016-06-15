@@ -22,6 +22,9 @@ DEFINE_double(rho, 0, "the ADMM parameter. ");
 DEFINE_double(lambda, 0, "the ADMM parameter norm coffecentf. ");
 DEFINE_double(errorthreshold, 0, "the obj error threshold. ");
 
+//data file
+DEFINE_string(data_file, "", "the dir of the data.");
+
 // Optimization parameters
 DEFINE_int32(num_epochs, 100, "Number of epochs"
         ", where each epoch approximately visit the whole dataset once. "

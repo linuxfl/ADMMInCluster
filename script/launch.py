@@ -13,7 +13,7 @@ proj_dir = dirname(dirname(app_dir))
 hostfile = join(proj_dir, hostfile_name)
 
 #cp cmd
-os.system(app_dir + "/script/cp.py")
+os.system(join(app_dir,"script/cp.py"))
 
 ssh_cmd = (
     "ssh "

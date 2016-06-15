@@ -39,6 +39,7 @@ namespace LR {
         rho = context.get_double("rho");
         lambda = context.get_double("lambda");
         errorthreshold = context.get_double("errorthreshold");
+        data_file = context.get_string("data_file");
     }
     
 	void LinearRegression::soft_threshold(Eigen::VectorXf src,Eigen::VectorXf &des,float t){
@@ -70,14 +71,22 @@ namespace LR {
         petuum::PSTableGroup::GlobalBarrier();
 
         float temp,error;
+        std::string A_data_file,b_data_file,sol_data_file;
+        
         char Adir[100],bdir[100];
         std::vector<float> w_cache;
-        sprintf(Adir,"/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/data/A%d.dat",client_id_*num_worker_threads_+thread_id);
-        sprintf(bdir,"/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/data/b%d.dat",client_id_*num_worker_threads_+thread_id);
+        
+        sprintf(Adir,"A%d.dat",client_id_*num_worker_threads_+thread_id);
+        sprintf(bdir,"b%d.dat",client_id_*num_worker_threads_+thread_id);
 		
-        FILE *fpA = fopen(Adir,"r");
-		FILE *fpb = fopen(bdir,"r");
-		FILE *fps = fopen("/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/data/solution.dat","r");
+		A_data_file = data_file + Adir;
+		b_data_file = data_file + bdir;
+		sol_data_file = data_file + "solution.dat";
+		
+        FILE *fpA = fopen(A_data_file.c_str(),"r");
+		FILE *fpb = fopen(b_data_file.c_str(),"r");
+		FILE *fps = fopen(sol_data_file.c_str(),"r");
+		
 		if(!fpA && !fpb && !fps){
 			LOG(INFO) << "open the source file error!!!";
 		}
@@ -166,7 +175,16 @@ namespace LR {
 				//LOG(INFO) << "after :\n"<< (A.transpose() * b + rho * z - y) << std::endl;
 				//LOG(INFO) << "lemonI :\n"<< lemonI << std::endl;
 				//LOG(INFO) << "z :\n"<< z << std::endl;
-				//LOG(INFO) << "w :\n"<< w << std::endl;
+			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
+			//}
+			//if(thread_id == 0 && client_id_ == 1){
+			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
+			//}
+			//if(thread_id == 0 && client_id_ == 2){
+			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
+			//}
+			//if(thread_id == 0 && client_id_ == 3){
+			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
 			//}
 			//update y
 			y = y + rho * (x - z);

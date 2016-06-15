@@ -22,15 +22,14 @@ hostfile = sys.argv[2]
 proj_dir = dirname(dirname(app_dir))
 
 params = {
-    "table_staleness": 0
-    , "feature": 1000
-    , "row": 1000
-    , "rho": 20000
+    "table_staleness": 10
+    , "feature": 100
+    , "row": 100
+    , "rho": 1000
     , "lambda": 0.001
-    , "num_epochs": 200
+    , "num_epochs": 100
     , "errorthreshold":10e-10
-    #, "output_path": "hdfs://hdfs-domain/user/bosen/dataset/ADMM/sample/output"
-    #, "data_file": "hdfs://hdfs-domain/user/bosen/dataset/ADMM/sample/data/sample.txt"
+    , "data_file": "/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/data/"
     }
 
 petuum_params = {
@@ -55,10 +54,10 @@ with open(hostfile, "r") as f:
 host_ips = [line.split()[1] for line in hostlines]
 petuum_params["num_clients"] = len(host_ips)
 
-cmd = "killall -q " + prog_name
+#cmd = "killall -q " + prog_name
 # os.system is synchronous call.
-os.system(cmd)
-print "Done killing"
+#os.system(cmd)
+#print "Done killing"
 
 cmd = "export CLASSPATH=`hadoop classpath --glob`:$CLASSPATH; "
 cmd += env_params + prog_path

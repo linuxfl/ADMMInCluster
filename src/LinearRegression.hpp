@@ -18,21 +18,13 @@ class LinearRegression {
 
         // petuum parameters
         int client_id_, num_clients_, num_worker_threads_;
-        float maximum_running_time_;
         
         // objective function parameters
         int rank_;
 
         // evaluate parameters
         int num_epochs_;
-
-        // input and output
-        std::string data_file_, input_data_format_, output_path_, 
-            output_data_format_, cache_path_;
-
-        // matrix loader for data X and S
-        //MatrixLoader<float> X_matrix_loader_, L_matrix_loader_;
-
+    
         // timer
         boost::posix_time::ptime initT_;
 		
@@ -43,5 +35,9 @@ class LinearRegression {
 		float rho;
 		float lambda;
 		float errorthreshold;
+		
+		//data file
+		std::string data_file;
+		
 };
 }; // namespace LR
