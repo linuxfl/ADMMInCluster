@@ -22,13 +22,13 @@ hostfile = sys.argv[2]
 proj_dir = dirname(dirname(app_dir))
 
 params = {
-    "table_staleness": 10
-    , "feature": 100
-    , "row": 100
-    , "rho": 1000
-    , "lambda": 0.001
+    "table_staleness": 20
+    , "feature": 1000
+    , "row": 1000
+    , "rho": 48000
+    , "lambda": 0.0001
     , "num_epochs": 100
-    , "errorthreshold":10e-10
+    , "errorthreshold": 10e-8
     , "data_file": "/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/data/"
     }
 

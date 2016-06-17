@@ -7,7 +7,7 @@ import numpy as np
 import sys
 import os
 
-BLOCK_SIZE = 16
+BLOCK_SIZE = 64
 hostfile_name = "/home/ubuntu/fangling/petuum/bosen/machinefiles/serverlist"
 
 app_dir = dirname(dirname(os.path.realpath(__file__)))

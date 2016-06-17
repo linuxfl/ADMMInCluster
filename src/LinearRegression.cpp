@@ -74,6 +74,9 @@ namespace LR {
 		
 		char Adir[100],bdir[100];
 		std::vector<float> w_cache;
+		boost::posix_time::ptime start,end;
+		boost::posix_time::time_duration difftime;
+		int networktime,sumTime = 0;
 		
 		sprintf(Adir,"A%d.dat",client_id_*num_worker_threads_+thread_id);
 		sprintf(bdir,"b%d.dat",client_id_*num_worker_threads_+thread_id);
@@ -142,8 +145,8 @@ namespace LR {
 		}
 		
 		//warm start
-		lemon = A.transpose()  * A + rho * identity.setIdentity();
-		lemonI = lemon.inverse();
+		//lemon = A.transpose()  * A + rho * identity.setIdentity();
+		//lemonI = lemon.inverse();
 		petuum::PSTableGroup::GlobalBarrier();
 		
 		//begin to iteration
@@ -157,11 +160,16 @@ namespace LR {
 					w(col_id) = w_cache[col_id];
 				}
 			}
+			
+			//compute time
+			start = boost::posix_time::microsec_clock::local_time();
 			w_old = w;
 			//update z with 2-norm
 			//z = (1.0/(rho + 2*lambda)) * w;
 			soft_threshold((1.0/rho * w),z,lambda/rho);
 			//update x
+			lemon = A.transpose()  * A + rho * identity.setIdentity();
+			lemonI = lemon.inverse();
 			x = lemonI * (A.transpose() * b + rho * z - y);
 			//if(thread_id == 0 && client_id_ == 0){
 				//LOG(INFO) << "client_id : "<< client_id_ <<"thread_id : "<< thread_id;
@@ -192,7 +200,11 @@ namespace LR {
 			
 			//w diff
 			w_diff = w - w_old;
-				
+			
+			end = boost::posix_time::microsec_clock::local_time();
+			difftime = (end - start);
+			sumTime += difftime.total_milliseconds();
+			
 			//update new z_diff to server
 			petuum::UpdateBatch<float> w_update;
 			for(int i = 0;i < feature;i++){
@@ -209,22 +221,24 @@ namespace LR {
 			
 			//obj value
 			obj = A * x - b;
-			obj_real = A * s - b;
+			
 			if(thread_id == 0 && client_id_ == 0)
 				LOG(INFO) << "iter: " << iter << ", client " 
 					<< client_id_ << ", thread " << thread_id <<
 						" primal error: " << error << " object value: "<< obj.squaredNorm();
 			if(error < errorthreshold)
 			{
-				boost::posix_time::time_duration runTime = 
-					boost::posix_time::microsec_clock::local_time() - initT_;
-				LOG(INFO) << "Elapsed time is: "<< runTime.total_milliseconds() << " ms.";
+				if(thread_id == 0 && client_id_ == 0){
+					boost::posix_time::time_duration runTime = 
+						boost::posix_time::microsec_clock::local_time() - initT_;
+					networktime = runTime.total_milliseconds() - sumTime;
+					LOG(INFO) << "Elapsed time is: "<< runTime.total_milliseconds() << " ms."
+						<< " network waiting time is: " << networktime <<" ms."
+						<< " compute time is: "<< sumTime << " ms.";
+				}
 				return;
 			}
 		}
-		boost::posix_time::time_duration runTime = 
-			boost::posix_time::microsec_clock::local_time() - initT_;
-		LOG(INFO) << "Elapsed time is: "<< runTime.total_milliseconds() << " ms.";
 	}
 	
 	LinearRegression::~LinearRegression() {
