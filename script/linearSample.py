@@ -7,6 +7,9 @@ import numpy as np
 import sys
 import os
 
+#TYPE = "dense"
+TYPE = "sparse"
+
 BLOCK_SIZE = 64
 hostfile_name = "/home/ubuntu/fangling/petuum/bosen/machinefiles/serverlist"
 
@@ -24,6 +27,10 @@ sampleOfNumber = int(sys.argv[1])
 paraOfNumber = int(sys.argv[2])
 
 s = np.random.uniform(-2,2,paraOfNumber)
+if TYPE == "sparse":
+	zeroloc = np.random.randint(paraOfNumber,size = paraOfNumber/2)
+	for i in zeroloc:
+		s[i] = 0
 s = mat(s).T
 np.savetxt(data_dir+"/solution.dat",s)
 

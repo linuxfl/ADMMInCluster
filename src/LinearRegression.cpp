@@ -163,10 +163,14 @@ namespace LR {
 			
 			//compute time
 			start = boost::posix_time::microsec_clock::local_time();
+			
 			w_old = w;
 			//update z with 2-norm
 			//z = (1.0/(rho + 2*lambda)) * w;
+			
+			//lasso
 			soft_threshold((1.0/rho * w),z,lambda/rho);
+			
 			//update x
 			lemon = A.transpose()  * A + rho * identity.setIdentity();
 			lemonI = lemon.inverse();
@@ -232,9 +236,11 @@ namespace LR {
 					boost::posix_time::time_duration runTime = 
 						boost::posix_time::microsec_clock::local_time() - initT_;
 					networktime = runTime.total_milliseconds() - sumTime;
-					LOG(INFO) << "Elapsed time is: "<< runTime.total_milliseconds() << " ms."
-						<< " network waiting time is: " << networktime <<" ms."
-						<< " compute time is: "<< sumTime << " ms.";
+					LOG(INFO) << "========================== result ===========================";
+					LOG(INFO) << "Elapsed time is: "<< runTime.total_milliseconds() << " ms.";
+					LOG(INFO) << "Network waiting time is: " << networktime <<" ms.";
+					LOG(INFO) << "Compute time is: "<< sumTime << " ms.";
+					LOG(INFO) << "=============================================================";
 				}
 				return;
 			}
