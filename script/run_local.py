@@ -25,11 +25,12 @@ params = {
     "table_staleness": 20
     , "feature": 1000
     , "row": 1000
-    , "rho": 48000
+    , "rho": 10
     , "lambda": 0.0001
-    , "num_epochs": 100
-    , "errorthreshold": 10e-8
-    , "data_file": "/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/data/"
+    , "num_epochs": 40
+    , "errorthreshold": 10e-10
+    , "data_dir": "/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/data/"
+		, "output_dir" : "/home/ubuntu/fangling/petuum/bosen/app/ADMMforNorm/output/"
     }
 
 petuum_params = {

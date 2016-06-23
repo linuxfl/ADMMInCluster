@@ -33,12 +33,14 @@ namespace LR {
 		
 		// optimization parameters
 		num_epochs_ = context.get_int32("num_epochs");
+		table_staleness_ = context.get_int32("table_staleness");
 		
 		//ADMM parameters
 		rho = context.get_double("rho");
 		lambda = context.get_double("lambda");
 		errorthreshold = context.get_double("errorthreshold");
-		data_file = context.get_string("data_file");
+		data_dir = context.get_string("data_dir");
+		output_dir = context.get_string("output_dir");
 		
 		LOG(INFO) <<"row: "<<row<< " feature: " << feature << " rho: "<<rho << " lambda: "
 		<< lambda <<" errorthreshold: " << errorthreshold;
@@ -59,6 +61,7 @@ namespace LR {
 	void LinearRegression::Start() {
 		// thread id on a client
 		int thread_id = thread_counter_++;
+		int num_worker = num_clients_ * num_worker_threads_;
 		petuum::PSTableGroup::RegisterThread();
 		LOG(INFO) << "client " << client_id_ << ", thread " 
 			<< thread_id << " registers!";
@@ -69,10 +72,10 @@ namespace LR {
 		if(thread_id == 0)
 			w_table.GetAsyncForced(0);
 		petuum::PSTableGroup::GlobalBarrier();
-		float temp,error;
-		std::string A_data_file,b_data_file,sol_data_file;
 		
-		char Adir[100],bdir[100];
+		float temp,error;
+		std::string A_data_file,b_data_file,sol_data_file,output_file;
+		char Adir[100],bdir[100],outputdir[100];
 		std::vector<float> w_cache;
 		boost::posix_time::ptime start,end;
 		boost::posix_time::time_duration difftime;
@@ -80,14 +83,17 @@ namespace LR {
 		
 		sprintf(Adir,"A%d.dat",client_id_*num_worker_threads_+thread_id);
 		sprintf(bdir,"b%d.dat",client_id_*num_worker_threads_+thread_id);
+		sprintf(outputdir,"objvalue_%d.txt",table_staleness_);
 		
-		A_data_file = data_file + Adir;
-		b_data_file = data_file + bdir;
-		sol_data_file = data_file + "solution.dat";
+		A_data_file = data_dir + Adir;
+		b_data_file = data_dir + bdir;
+		sol_data_file = data_dir + "solution.dat";
+		output_file = output_dir + outputdir;
 		
 		FILE *fpA = fopen(A_data_file.c_str(),"r");
 		FILE *fpb = fopen(b_data_file.c_str(),"r");
 		FILE *fps = fopen(sol_data_file.c_str(),"r");
+		std::ofstream fout(output_file);
 		
 		if(!fpA && !fpb && !fps){
 			LOG(INFO) << "open the source file error!!!";
@@ -144,6 +150,10 @@ namespace LR {
 			s(i) = temp;
 		}
 		
+		fclose(fpA);
+		fclose(fpb);
+		fclose(fps);
+		
 		//warm start
 		//lemon = A.transpose()  * A + rho * identity.setIdentity();
 		//lemonI = lemon.inverse();
@@ -164,46 +174,30 @@ namespace LR {
 			//compute time
 			start = boost::posix_time::microsec_clock::local_time();
 			
-			w_old = w;
-			//update z with 2-norm
-			//z = (1.0/(rho + 2*lambda)) * w;
-			
-			//lasso
-			soft_threshold((1.0/rho * w),z,lambda/rho);
+			//soft threshold
+			soft_threshold((1.0/(rho*num_worker) * w),z,lambda/(rho*num_worker));
 			
 			//update x
 			lemon = A.transpose()  * A + rho * identity.setIdentity();
 			lemonI = lemon.inverse();
 			x = lemonI * (A.transpose() * b + rho * z - y);
-			//if(thread_id == 0 && client_id_ == 0){
-				//LOG(INFO) << "client_id : "<< client_id_ <<"thread_id : "<< thread_id;
-				//LOG(INFO) << "A matrix:\n"<< A << std::endl;
-				//LOG(INFO) << "b matrix:\n"<< b << std::endl;
-				//LOG(INFO) << "x:\n"<< x << std::endl;
-				//LOG(INFO) << "y:\n"<< y << std::endl;
-				//LOG(INFO) << "client_id : "<< client_id_ <<"thread_id : "<< thread_id << " z:\n"<< z << std::endl;
-				//LOG(INFO) << "after :\n"<< (A.transpose() * b + rho * z - y) << std::endl;
-				//LOG(INFO) << "lemonI :\n"<< lemonI << std::endl;
-				//LOG(INFO) << "z :\n"<< z << std::endl;
-			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
-			//}
-			//if(thread_id == 0 && client_id_ == 1){
-			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
-			//}
-			//if(thread_id == 0 && client_id_ == 2){
-			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
-			//}
-			//if(thread_id == 0 && client_id_ == 3){
-			//	LOG(INFO) <<" iter: "<< iter << " client_id : "<< client_id_ <<"thread_id : "<< thread_id<<" w :\n"<< w << std::endl;
-			//}
+			
 			//update y
 			y = y + rho * (x - z);
+			
 			//update w	
-			//z = 1.0/(num_worker_threads_* num_clients_) * (x + 1.0/rho * y);
 			w = rho * x + y;
 			
 			//w diff
 			w_diff = w - w_old;
+			w_old = w;
+			
+			//primal error
+			x_diff = x - s;
+			error = x_diff.norm();
+			
+			//obj value
+			obj = A * x - b;
 			
 			end = boost::posix_time::microsec_clock::local_time();
 			difftime = (end - start);
@@ -217,20 +211,14 @@ namespace LR {
 			w_table.BatchInc(0, w_update);
 			//clock
 			petuum::PSTableGroup::Clock();
-			 
-			x_diff = x - s;
 			
-			//primal error
-			error = x_diff.squaredNorm()/s.squaredNorm();
-			
-			//obj value
-			obj = A * x - b;
-			
-			if(thread_id == 0 && client_id_ == 0)
+			if(thread_id == 0 && client_id_ == 0){
 				LOG(INFO) << "iter: " << iter << ", client " 
 					<< client_id_ << ", thread " << thread_id <<
-						" primal error: " << error << " object value: "<< obj.squaredNorm();
-			if(error < errorthreshold)
+						" primal error: " << error << " object value: "<< 1.0/2 * obj.norm();
+				fout << 1.0/2 * obj.norm() << std::endl;
+			}
+			if(error < errorthreshold||iter == num_epochs_ - 1)
 			{
 				if(thread_id == 0 && client_id_ == 0){
 					boost::posix_time::time_duration runTime = 
@@ -242,6 +230,7 @@ namespace LR {
 					LOG(INFO) << "Compute time is: "<< sumTime << " ms.";
 					LOG(INFO) << "=============================================================";
 				}
+				fout.close();
 				return;
 			}
 		}

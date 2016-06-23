@@ -23,7 +23,8 @@ DEFINE_double(lambda, 0, "the ADMM parameter norm coffecentf. ");
 DEFINE_double(errorthreshold, 0, "the obj error threshold. ");
 
 //data file
-DEFINE_string(data_file, "", "the dir of the data.");
+DEFINE_string(data_dir, "", "the dir of the data.");
+DEFINE_string(output_dir, "", "the dir of output dir.");
 
 // Optimization parameters
 DEFINE_int32(num_epochs, 100, "Number of epochs"
@@ -108,7 +109,8 @@ int main(int argc, char * argv[]) {
 
     petuum::PSTableGroup::CreateTableDone();
     LOG(INFO) << "Create Table Done!";
-
+		LOG(INFO) << "Staleness: " << FLAGS_table_staleness;
+		
     std::vector<std::thread> threads(FLAGS_num_worker_threads);
     for (auto & thr: threads) {
         thr = std::thread(&LR::LinearRegression::Start, std::ref(lr));
@@ -117,6 +119,6 @@ int main(int argc, char * argv[]) {
         thr.join();
     }
     petuum::PSTableGroup::ShutDown();
-    LOG(INFO) << "NMF shut down!";
+    LOG(INFO) << "shut down!";
     return 0;
 }
